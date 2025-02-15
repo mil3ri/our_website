@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveWordle 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik+Glitch+Pop&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
+            background-size: 400% 400%;
+            animation: gradient 10s ease infinite;
+            font-family: 'Rubik Glitch Pop', cursive;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container {
+            margin-top: 50px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .title {
+            font-size: 3em;
+            text-shadow: 0 0 20px #ff0066;
+            margin-bottom: 30px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #ffb6c1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.1);
+            animation: pulse 2s infinite;
+            transition: all 0.3s ease;
+        }
+
+        .cell.correct {
+            background: #ff1493;
+            border-color: #ff69b4;
+            animation: correctAnim 0.5s ease;
+        }
+
+        .cell.present {
+            background: #ff69b4;
+            border-color: #ff1493;
+            animation: presentAnim 0.5s ease;
+        }
+
+        .cell.wrong {
+            background: #c71585;
+            animation: wrongAnim 0.5s ease;
+        }
+
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .key {
+            padding: 12px;
+            border: 2px solid #ffb6c1;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .key:hover {
+            background: #ff69b4;
+            transform: scale(1.1);
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 20px #ff0066; }
+            50% { text-shadow: 0 0 40px #ff1493; }
+            100% { text-shadow: 0 0 20px #ff0066; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes correctAnim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .sparkle {
+            position: absolute;
+            background: radial-gradient(circle, #ff69b4 20%, transparent 70%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            animation: sparkle 1s linear forwards;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(3) rotate(360deg); opacity: 0; }
+        }
+
+        .hearts {
+            position: absolute;
+            font-size: 24px;
+            animation: fall linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title">LOVEWORDLE 💖</div>
+        <div class="grid" id="grid"></div>
+        <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <script>
+        const WORD_LENGTH = 5;
+        const ROUNDS = 6;
+        const TARGET_WORD = "HEART"; // Replace with random word from word list
+        
+        let currentGuess = [];
+        let currentRow = 0;
+
+        function createGrid() {
+            const grid = document.getElementById("grid");
+            for (let i = 0; i < ROUNDS; i++) {
+                const row = document.createElement("div");
+                row.className = "row";
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    row.appendChild(cell);
+                }
+                grid.appendChild(row);
+            }
+        }
+
+        function createKeyboard() {
+            const keyboard = document.getElementById("keyboard");
+            const keyboardLayout = [
+                "Q W E R T Y U I O P",
+                "A S D F G H J K L",
+                "Enter Z X C V B N M Delete"
+            ];
+
+            keyboardLayout.forEach(row => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "keyboard-row";
+                row.split(" ").forEach(key => {
+                    const keyDiv = document.createElement("div");
+                    keyDiv.className = "key";
+                    keyDiv.textContent = key;
+                    keyDiv.addEventListener("click", () => handleInput(key));
+                    rowDiv.appendChild(keyDiv);
+                });
+                keyboard.appendChild(rowDiv);
+            });
+        }
+
+        function handleInput(key) {
+            if (key === "Delete") {
+                currentGuess.pop();
+            } else if (key === "Enter") {
+                if (currentGuess.length === WORD_LENGTH) {
+                    checkGuess();
+                    currentRow++;
+                    currentGuess = [];
+                }
+            } else if (currentGuess.length < WORD_LENGTH) {
+                currentGuess.push(key);
+            }
+            updateGrid();
+        }
+
+        function updateGrid() {
+            const rows = document.querySelectorAll(".row");
+            const currentRowDiv = rows[currentRow];
+            currentRowDiv.querySelectorAll(".cell").forEach((cell, i) => {
+                cell.textContent = currentGuess[i] || "";
+            });
+        }
+
+        function checkGuess() {
+            const row = document.querySelectorAll(".row")[currentRow];
+            const cells = row.querySelectorAll(".cell");
+            
+            // Simple check (replace with actual Wordle logic)
+            currentGuess.forEach((letter, i) => {
+                setTimeout(() => {
+                    if (TARGET_WORD[i] === letter) {
+                        cells[i].classList.add("correct");
+                    } else if (TARGET_WORD.includes(letter)) {
+                        cells[i].classList.add("present");
+                    } else {
+                        cells[i].classList.add("wrong");
+                    }
+                }, i * 200);
+            });
+        }
+
+        // Create sparkle effect
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+
+        // Create falling hearts
+        function createHearts() {
+            const heart = document.createElement('div');
+            heart.className = 'hearts';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+            heart.innerHTML = '💖';
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 5000);
+        }
+
+        // Event listeners
+        document.addEventListener('mousemove', (e) => {
+            if(Math.random() < 0.4) createSparkle(e.clientX, e.clientY);
+        });
+
+        setInterval(createHearts, 300);
+        createGrid();
+        createKeyboard();
+    </script>
+</body>
+</html>
