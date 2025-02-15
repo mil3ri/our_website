@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Roulette 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
+            background-size: 400% 400%;
+            animation: gradient 10s ease infinite;
+            font-family: 'Comfortaa', cursive;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 2;
+            margin-top: 50px;
+        }
+
+        .roulette-wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 5px solid #ffb6c1;
+            margin: 2rem auto;
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 100% 0, 100% 100%);
+            transform-origin: 50% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            transform: rotate(0deg);
+        }
+
+        .result {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 3em;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+
+        .secondary-result {
+            font-size: 1.5em;
+            opacity: 0;
+            animation: fadeIn 0.5s 1s forwards;
+        }
+
+        .spin-button {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background: #ff1493;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Patrick Hand', cursive;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.8);
+        }
+
+        .spin-button:hover {
+            transform: scale(1.1);
+            background: #ff0066;
+            box-shadow: 0 0 20px #ff69b4;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes wheelSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(1440deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Keep previous sparkle and hearts animations */
+        .sparkle, .hearts { /* Same as previous implementations */ }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="roulette-wheel" id="wheel">
+            <!-- Segments will be added via JavaScript -->
+        </div>
+        <div class="result" id="result"></div>
+        <button class="spin-button" id="spinBtn">SPIN FOR LOVE! 💖</button>
+    </div>
+
+    <script>
+        const outcomes = [
+            {
+                type: 'win',
+                messages: [
+                    { main: "YOU WON! 🎉", secondary: "My winner babyyy~ 💘" },
+                    { main: "JACKPOT! 💎", secondary: "You're my lucky star! 🌟" },
+                    { main: "PERFECT! 💯", secondary: "You complete me! 💞" }
+                ]
+            },
+            {
+                type: 'lose',
+                messages: [
+                    { main: "YOU LOST :((", secondary: "But I still love youuu 💖" },
+                    { main: "OH NO! 😢", secondary: "My love remains forever! 💕" },
+                    { main: "TRY AGAIN 💔", secondary: "You'll always win my heart! 💘" }
+                ]
+            }
+        ];
+
+        const wheel = document.getElementById('wheel');
+        const result = document.getElementById('result');
+        const spinBtn = document.getElementById('spinBtn');
+        let isSpinning = false;
+
+        // Create wheel segments
+        for(let i = 0; i < 12; i++) {
+            const segment = document.createElement('div');
+            segment.className = 'wheel-segment';
+            segment.style.transform = `rotate(${i * 30}deg)`;
+            segment.style.backgroundColor = `hsl(${i * 30}, 70%, 70%)`;
+            wheel.appendChild(segment);
+        }
+
+        spinBtn.addEventListener('click', () => {
+            if(isSpinning) return;
+            isSpinning = true;
+            
+            // Reset results
+            result.textContent = '';
+            result.style.animation = 'none';
+            
+            // Spin animation
+            wheel.style.animation = 'wheelSpin 3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            
+            setTimeout(() => {
+                wheel.style.animation = '';
+                const randomType = Math.random() > 0.4 ? 'win' : 'lose';
+                const typeOutcomes = outcomes.find(o => o.type === randomType);
+                const { main, secondary } = typeOutcomes.messages[
+                    Math.floor(Math.random() * typeOutcomes.messages.length)
+                ];
+
+                result.innerHTML = `
+                    <div>${main}</div>
+                    <div class="secondary-result">${secondary}</div>
+                `;
+                result.style.animation = 'fadeIn 0.5s';
+                isSpinning = false;
+            }, 3000);
+        });
+
+        // Add sparkle and hearts effects from previous implementations
+    </script>
+</body>
+</html>
