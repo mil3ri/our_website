@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Love Roulette 💖</title>
+    <title>Ultimate Love Roulette 💖</title>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
         body {
@@ -18,13 +18,14 @@
             font-family: 'Comfortaa', cursive;
             color: white;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         .container {
             text-align: center;
             z-index: 2;
             margin-top: 50px;
+            position: relative;
         }
 
         .roulette-wheel {
@@ -37,6 +38,7 @@
             overflow: hidden;
             background: rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
+            transition: transform 0.3s;
         }
 
         .wheel-segment {
@@ -54,9 +56,13 @@
 
         .result {
             font-family: 'Patrick Hand', cursive;
-            font-size: 3em;
+            font-size: 2.5em;
             margin: 20px 0;
-            min-height: 100px;
+            min-height: 150px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            max-width: 80vw;
         }
 
         .secondary-result {
@@ -76,12 +82,49 @@
             transition: all 0.3s ease;
             font-family: 'Patrick Hand', cursive;
             text-shadow: 0 0 10px rgba(255, 105, 180, 0.8);
+            position: relative;
+            overflow: hidden;
         }
 
         .spin-button:hover {
             transform: scale(1.1);
             background: #ff0066;
             box-shadow: 0 0 20px #ff69b4;
+        }
+
+        .achievements-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 250px;
+        }
+
+        .achievement {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .achievement.unlocked {
+            display: block;
+            animation: popIn 0.3s ease;
+        }
+
+        .achievement-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff1493;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: slideUp 0.5s ease;
         }
 
         @keyframes gradient {
@@ -100,82 +143,335 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Keep previous sparkle and hearts animations */
-        .sparkle, .hearts { /* Same as previous implementations */ }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { bottom: -100px; }
+            to { bottom: 20px; }
+        }
+
+        .sparkle {
+            position: absolute;
+            background: radial-gradient(circle, #ff69b4 20%, transparent 70%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            animation: sparkle 1s linear forwards;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(3) rotate(360deg); opacity: 0; }
+        }
+
+        .hearts {
+            position: absolute;
+            font-size: 24px;
+            animation: fall linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="roulette-wheel" id="wheel">
-            <!-- Segments will be added via JavaScript -->
-        </div>
+        <div class="roulette-wheel" id="wheel"></div>
         <div class="result" id="result"></div>
         <button class="spin-button" id="spinBtn">SPIN FOR LOVE! 💖</button>
     </div>
 
+    <div class="achievements-panel" id="achievementsPanel">
+        <h3>🏆 Achievements</h3>
+        <div id="achievementsList"></div>
+    </div>
+
+    <div class="achievement-notification" id="achievementNotify"></div>
+
     <script>
+        // Game Data
+        let spinCount = 0;
+        let achievements = [];
+        const outcomePool = [];
+
+        // 100+ Romantic Outcomes
         const outcomes = [
-            {
-                type: 'win',
-                messages: [
-                    { main: "YOU WON! 🎉", secondary: "My winner babyyy~ 💘" },
-                    { main: "JACKPOT! 💎", secondary: "You're my lucky star! 🌟" },
-                    { main: "PERFECT! 💯", secondary: "You complete me! 💞" }
-                ]
-            },
-            {
-                type: 'lose',
-                messages: [
-                    { main: "YOU LOST :((", secondary: "But I still love youuu 💖" },
-                    { main: "OH NO! 😢", secondary: "My love remains forever! 💕" },
-                    { main: "TRY AGAIN 💔", secondary: "You'll always win my heart! 💘" }
-                ]
-            }
+            // Win Outcomes (30)
+            { type: 'win', main: "YOU WON! 🎉", secondary: "My winner babyyy~ 💘" },
+            { type: 'win', main: "JACKPOT! 💎", secondary: "You're my lucky star! 🌟" },
+            { type: 'win', main: "PERFECT MATCH! 💯", secondary: "100% compatible! 🔥" },
+            { type: 'win', main: "LOVE VICTORY! 🏁", secondary: "You crossed my heart! 💘" },
+            { type: 'win', main: "SOULMATE STATUS! 💞", secondary: "We're meant to be! 🌠" },
+            { type: 'win', main: "LOVE CHAMPION! 🏆", secondary: "You won my heart forever! 💘" },
+            { type: 'win', main: "HEART STEALER! 🥷", secondary: "You stole my heart! 💓" },
+            { type: 'win', main: "CUPID'S CHOICE! 🏹", secondary: "Bullseye! You're perfect! 🎯" },
+            { type: 'win', main: "ROMANCE ROYALTY! 👑", secondary: "Bow down to my king/queen! 🫅" },
+            { type: 'win', main: "LOVE GENIUS! 🧠", secondary: "You solved my heart! 💖" },
+            { type: 'win', main: "HEART'S DESIRE! 💝", secondary: "You're everything I wanted! 🌈" },
+            { type: 'win', main: "ETERNAL FLAME! 🔥", secondary: "Our love will never die! ♾️" },
+            { type: 'win', main: "DESTINY'S CHOICE! 🌌", secondary: "The stars aligned for us! ✨" },
+            { type: 'win', main: "LOVE MAGNET! 🧲", secondary: "I'm drawn to you! 🧭" },
+            { type: 'win', main: "HEART'S ECHO! 📣", secondary: "Our love resonates forever! 🔊" },
+            { type: 'win', main: "ROMANCE MASTER! 🥋", secondary: "You aced love! 🥇" },
+            { type: 'win', main: "LOVE'S TREASURE! 💎", secondary: "You're my precious gem! 💍" },
+            { type: 'win', main: "HEART'S MELODY! 🎶", secondary: "Our love song is perfect! 🎵" },
+            { type: 'win', main: "ROMANCE WARRIOR! ⚔️", secondary: "You conquered my heart! 🏰" },
+            { type: 'win', main: "LOVE'S LIGHT! 💡", secondary: "You brighten my world! 🌞" },
+            { type: 'win', main: "HEART'S HARMONY! 🎼", secondary: "We're in perfect sync! 🎹" },
+            { type: 'win', main: "ROMANCE PRODIGY! �", secondary: "You're a natural at love! 🧬" },
+            { type: 'win', main: "LOVE'S MIRACLE! ✨", secondary: "You're my dream come true! 🌠" },
+            { type: 'win', main: "HEART'S COMPASS! 🧭", secondary: "You guide me to happiness! 🗺️" },
+            { type: 'win', main: "ROMANCE LEGEND! 🦄", secondary: "Our love is mythical! 🏰" },
+            { type: 'win', main: "LOVE'S FIREWORK! 🎆", secondary: "You light up my life! 🎇" },
+            { type: 'win', main: "HEART'S ANTHEM! 🎤", secondary: "Our love is legendary! 🎸" },
+            { type: 'win', main: "ROMANCE PHOENIX! 🦚", secondary: "Our love rises stronger! 🔥" },
+            { type: 'win', main: "LOVE'S HORIZON! 🌅", secondary: "Our future is bright! 🌄" },
+        
+            // Lose Outcomes (30)
+            { type: 'lose', main: "YOU LOST :((", secondary: "But I still love youuu 💖" },
+            { type: 'lose', main: "OH NO! 😢", secondary: "My love remains forever! 💕" },
+            { type: 'lose', main: "RAINCHECK? 🌧️", secondary: "Let's cuddle instead! 🛌" },
+            { type: 'lose', main: "BETTER LUCK NEXT TIME 💔", secondary: "My love never fades! 💖" },
+            { type: 'lose', main: "ALMOST THERE! 💫", secondary: "You've already won me over! 😘" },
+            { type: 'lose', main: "SO CLOSE! 🎯", secondary: "You still have my heart! 💘" },
+            { type: 'lose', main: "MISSED ME! 💘", secondary: "But I'll never miss you! 💞" },
+            { type: 'lose', main: "TRY AGAIN! 🔄", secondary: "My love is worth it! 💝" },
+            { type: 'lose', main: "HEART'S PAUSE! ⏸️", secondary: "Let's try again later! ⏯️" },
+            { type: 'lose', main: "LOVE'S CHALLENGE! 🧗", secondary: "You'll get there! 🏔️" },
+            { type: 'lose', main: "ROMANCE DETOUR! 🚧", secondary: "We're still on track! 🛤️" },
+            { type: 'lose', main: "HEART'S MISTAKE! 🤷", secondary: "But you're perfect to me! 💖" },
+            { type: 'lose', main: "LOVE'S LESSON! 📚", secondary: "We grow stronger! 🌱" },
+            { type: 'lose', main: "HEART'S TWIST! 🌀", secondary: "Our love remains! 💞" },
+            { type: 'lose', main: "ROMANCE PAUSE! ⏸️", secondary: "Let's reset and try again! 🔄" },
+            { type: 'lose', main: "LOVE'S GLITCH! 🐞", secondary: "Our love is still perfect! 💖" },
+            { type: 'lose', main: "HEART'S DELAY! ⏳", secondary: "Good things take time! ⌛" },
+            { type: 'lose', main: "ROMANCE RESET! 🔄", secondary: "Our love is still strong! 💪" },
+            { type: 'lose', main: "LOVE'S HICCUP! 🤭", secondary: "We'll laugh about this later! 😂" },
+            { type: 'lose', main: "HEART'S BREAK! 💔", secondary: "But our love is unbreakable! 💖" },
+            { type: 'lose', main: "ROMANCE STUMBLE! 🦶", secondary: "We'll rise stronger! 🧗" },
+            { type: 'lose', main: "LOVE'S PAUSE! ⏸️", secondary: "Our story continues! 📖" },
+            { type: 'lose', main: "HEART'S TWEAK! 🛠️", secondary: "Our love is still perfect! 💖" },
+            { type: 'lose', main: "ROMANCE REBOOT! 🔄", secondary: "Our love is loading! ⏳" },
+            { type: 'lose', main: "LOVE'S DETOUR! 🚧", secondary: "We're still on track! 🛤️" },
+            { type: 'lose', main: "HEART'S RESET! 🔄", secondary: "Our love is reborn! 🌱" },
+            { type: 'lose', main: "ROMANCE PAUSE! ⏸️", secondary: "Our love is still strong! 💪" },
+            { type: 'lose', main: "LOVE'S GLITCH! 🐞", secondary: "Our love is still perfect! 💖" },
+            { type: 'lose', main: "HEART'S DELAY! ⏳", secondary: "Good things take time! ⌛" },
+        
+            // Love Declarations (20)
+            { type: 'love', main: "INFINITE AFFECTION! 💕", secondary: "My love is eternal! ♾️" },
+            { type: 'love', main: "ADORE YOU! 😍", secondary: "More every second! ⏳" },
+            { type: 'love', main: "OBSESSED WITH YOU! 😻", secondary: "Can't get enough! 🥰" },
+            { type: 'love', main: "YOU COMPLETE ME! 💞", secondary: "My missing piece! 🧩" },
+            { type: 'love', main: "MY EVERYTHING! 🌎", secondary: "You're my world! 🌍" },
+            { type: 'love', main: "HEART'S BEAT! 💓", secondary: "You're my rhythm! 🎶" },
+            { type: 'love', main: "SOUL'S MATCH! 🔥", secondary: "We're one! 💞" },
+            { type: 'love', main: "ETERNAL FLAME! 🔥", secondary: "Our love never dies! ♾️" },
+            { type: 'love', main: "HEART'S SONG! 🎵", secondary: "You're my melody! 🎶" },
+            { type: 'love', main: "LOVE'S LIGHT! 💡", secondary: "You brighten my world! 🌞" },
+            { type: 'love', main: "MY FOREVER! 💍", secondary: "Always and always! ♾️" },
+            { type: 'love', main: "HEART'S TREASURE! 💎", secondary: "You're my precious! 💖" },
+            { type: 'love', main: "SOUL'S FIRE! 🔥", secondary: "You ignite me! 💥" },
+            { type: 'love', main: "MY DESTINY! 🌌", secondary: "We're written in the stars! ✨" },
+            { type: 'love', main: "HEART'S HOME! 🏡", secondary: "You're where I belong! 🧡" },
+            { type: 'love', main: "LOVE'S MIRACLE! ✨", secondary: "You're my dream come true! 🌠" },
+            { type: 'love', main: "MY ALWAYS! 💖", secondary: "Forever and ever! ♾️" },
+            { type: 'love', main: "HEART'S ECHO! 📣", secondary: "Our love resonates forever! 🔊" },
+            { type: 'love', main: "SOUL'S MELODY! 🎶", secondary: "You're my perfect song! 🎵" },
+            { type: 'love', main: "MY INFINITY! ♾️", secondary: "Our love has no end! 💞" },
+        
+            // Future Plans (15)
+            { type: 'future', main: "FOREVER TOGETHER! 💍", secondary: "Let's build our future! 🏡" },
+            { type: 'future', main: "BABY TIME? 👶", secondary: "Let's make a family! 👨👩👧" },
+            { type: 'future', main: "HOME SWEET HOME! 🏡", secondary: "Let's build our nest! 🪹" },
+            { type: 'future', main: "TRAVEL BUDDIES! ✈️", secondary: "Let's explore the world! 🌍" },
+            { type: 'future', main: "GROW OLD TOGETHER! 👵👴", secondary: "Our love will age like wine! 🍷" },
+            { type: 'future', main: "DREAM TEAM! 💭", secondary: "Let's build our dreams! 🏗️" },
+            { type: 'future', main: "FUTURE PLANS! 📅", secondary: "Our calendar is full! 🗓️" },
+            { type: 'future', main: "LIFETIME ADVENTURE! 🗺️", secondary: "Our journey begins! 🧭" },
+            { type: 'future', main: "ETERNAL PARTNERS! 🤝", secondary: "We're in this forever! ♾️" },
+            { type: 'future', main: "DREAM BUILDERS! 🏗️", secondary: "Our future is bright! 🌞" },
+            { type: 'future', main: "LIFETIME LOVE! 💖", secondary: "Our story continues! 📖" },
+            { type: 'future', main: "FUTURE GOALS! 🎯", secondary: "We'll achieve them together! 💪" },
+            { type: 'future', main: "ETERNAL BOND! 🔗", secondary: "Our love is unbreakable! 💖" },
+            { type: 'future', main: "DREAM CHASERS! 🏃‍♂️🏃‍♀️", secondary: "Let's catch them together! 🌠" },
+            { type: 'future', main: "FUTURE MEMORIES! 📸", secondary: "Let's make them together! 🧡" },
+        
+            // Special Outcomes (10)
+            { type: 'special', main: "💝 SURPRISE KISS! 💋", secondary: "Virtual smooch coming! 😚" },
+            { type: 'special', main: "🌟 MAGIC MOMENT! ✨", secondary: "Make a wish, my love! 🌠" },
+            { type: 'special', main: "🌹 ROMANCE BOOST! 🚀", secondary: "Date night upgrade! 🌙" },
+            { type: 'special', main: "💖 LOVE EXPLOSION! 💥", secondary: "My heart's overflowing! 🥰" },
+            { type: 'special', main: "🎁 SURPRISE GIFT! 🎀", secondary: "You deserve the world! 🌍" },
+            { type: 'special', main: "🌈 LOVE SPECTRUM! 🌟", secondary: "Our love has all colors! 🎨" },
+            { type: 'special', main: "💫 COSMIC LOVE! 🌌", secondary: "We're star-crossed! ✨" },
+            { type: 'special', main: "🎇 LOVE FIREWORKS! �", secondary: "Our love is dazzling! 🌠" },
+            { type: 'special', main: "💞 TWIN FLAMES! 🔥", secondary: "Our souls are one! 💖" },
+            { type: 'special', main: "🎶 LOVE SYMPHONY! 🎻", secondary: "Our hearts play in harmony! 🎵" },
+        
+            // Funny Outcomes (15)
+            { type: 'funny', main: "SNUGGLE ALERT! 🧸", secondary: "Bring cookies to bed! 🍪" },
+            { type: 'funny', main: "LOVE BURGER! 🍔", secondary: "You're the cheese to my bun! 🧀" },
+            { type: 'funny', main: "PILLOW FIGHT! 🛏️", secondary: "But I'll let you win! 🏳️" },
+            { type: 'funny', main: "LAUGH ATTACK! 😂", secondary: "You're my happy pill! 💊" },
+            { type: 'funny', main: "CUDDLE BUG! 🐛", secondary: "Let's snuggle forever! 🛌" },
+            { type: 'funny', main: "LOVE NINJA! 🥷", secondary: "You snuck into my heart! 💘" },
+            { type: 'funny', main: "PIZZA MY HEART! 🍕", secondary: "You're my favorite slice! 🍴" },
+            { type: 'funny', main: "TACO 'BOUT LOVE! 🌮", secondary: "You're my guac! 🥑" },
+            { type: 'funny', main: "LOVE POTION! 🧪", secondary: "You brewed it perfectly! 🧙" },
+            { type: 'funny', main: "CUPCAKE LOVE! 🧁", secondary: "You're the icing on my cake! 🎂" },
+            { type: 'funny', main: "LOVE PENGUIN! 🐧", secondary: "Waddle we do together! 🐾" },
+            { type: 'funny', main: "KOALA-TY TIME! 🐨", secondary: "Let's cling together! 🌿" },
+            { type: 'funny', main: "OTTER LOVE! 🦦", secondary: "You're otterly amazing! 🌊" },
+            { type: 'funny', main: "PANDA-MONIUM! 🐼", secondary: "You're un-bear-ably cute! 🎋" },
+            { type: 'funny', main: "SLOTH LOVE! 🦥", secondary: "Let's take it slow! 🍃" }
         ];
 
+        // Achievements System
+        const achievementList = [
+            { id: 1, name: "First Spin! 💫", desc: "Take your first chance at love", earned: false },
+            { id: 2, name: "Lucky Streak! 🍀", desc: "Get 3 wins in a row", earned: false },
+            { id: 3, name: "Hopeless Romantic 💘", desc: "Spin 10 times", earned: false },
+            { id: 4, name: "Special Collector 🌟", desc: "Find 5 special outcomes", earned: false },
+            { id: 5, name: "Love Expert ❤️", desc: "Unlock all achievements", earned: false }
+        ];
+
+        // Game Initialization
         const wheel = document.getElementById('wheel');
         const result = document.getElementById('result');
         const spinBtn = document.getElementById('spinBtn');
         let isSpinning = false;
 
-        // Create wheel segments
-        for(let i = 0; i < 12; i++) {
-            const segment = document.createElement('div');
-            segment.className = 'wheel-segment';
-            segment.style.transform = `rotate(${i * 30}deg)`;
-            segment.style.backgroundColor = `hsl(${i * 30}, 70%, 70%)`;
-            wheel.appendChild(segment);
+        function initializeGame() {
+            // Create wheel segments
+            for(let i = 0; i < 12; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                segment.style.transform = `rotate(${i * 30}deg)`;
+                segment.style.backgroundColor = `hsl(${i * 30}, 70%, 70%)`;
+                wheel.appendChild(segment);
+            }
+
+            // Load achievements
+            achievements = JSON.parse(localStorage.getItem('loveAchievements')) || [];
+            updateAchievementsDisplay();
         }
 
-        spinBtn.addEventListener('click', () => {
+        // Game Functions
+        function spinRoulette() {
             if(isSpinning) return;
             isSpinning = true;
+            spinCount++;
             
-            // Reset results
-            result.textContent = '';
-            result.style.animation = 'none';
-            
-            // Spin animation
+            result.innerHTML = '';
             wheel.style.animation = 'wheelSpin 3s cubic-bezier(0.25, 0.1, 0.25, 1)';
             
             setTimeout(() => {
                 wheel.style.animation = '';
-                const randomType = Math.random() > 0.4 ? 'win' : 'lose';
-                const typeOutcomes = outcomes.find(o => o.type === randomType);
-                const { main, secondary } = typeOutcomes.messages[
-                    Math.floor(Math.random() * typeOutcomes.messages.length)
-                ];
-
-                result.innerHTML = `
-                    <div>${main}</div>
-                    <div class="secondary-result">${secondary}</div>
-                `;
-                result.style.animation = 'fadeIn 0.5s';
+                const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+                displayOutcome(outcome);
+                checkAchievements();
                 isSpinning = false;
             }, 3000);
-        });
+        }
+
+        function displayOutcome(outcome) {
+            result.innerHTML = `
+                <div class="${outcome.type === 'special' ? 'special-outcome' : ''}">${outcome.main}</div>
+                <div class="secondary-result">${outcome.secondary}</div>
+            `;
+        }
+
+        // Achievements System
+        function checkAchievements() {
+            achievementList.forEach(ach => {
+                if (ach.earned) return;
+                
+                let earned = false;
+                switch(ach.id) {
+                    case 1:
+                        earned = spinCount >= 1;
+                        break;
+                    case 2:
+                        // Implement win streak tracking
+                        break;
+                    case 3:
+                        earned = spinCount >= 10;
+                        break;
+                    case 4:
+                        // Track special outcomes
+                        break;
+                    case 5:
+                        earned = achievements.length === achievementList.length -1;
+                        break;
+                }
+
+                if(earned && !ach.earned) {
+                    ach.earned = true;
+                    achievements.push(ach);
+                    showAchievementNotification(ach);
+                    localStorage.setItem('loveAchievements', JSON.stringify(achievements));
+                    updateAchievementsDisplay();
+                }
+            });
+        }
+
+        function showAchievementNotification(achievement) {
+            const notify = document.getElementById('achievementNotify');
+            notify.textContent = `Achievement Unlocked: ${achievement.name} - ${achievement.desc}`;
+            notify.style.display = 'block';
+            setTimeout(() => notify.style.display = 'none', 3000);
+        }
+
+        function updateAchievementsDisplay() {
+            const list = document.getElementById('achievementsList');
+            list.innerHTML = achievementList.map(ach => `
+                <div class="achievement ${ach.earned ? 'unlocked' : ''}">
+                    ${ach.earned ? '✅' : '🔒'} ${ach.name}<br>
+                    <small>${ach.desc}</small>
+                </div>
+            `).join('');
+        }
+
+        // Event Listeners
+        spinBtn.addEventListener('click', spinRoulette);
+        
+        // Initialize
+        initializeGame();
 
         // Add sparkle and hearts effects from previous implementations
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+
+        function createHearts() {
+            const heart = document.createElement('div');
+            heart.className = 'hearts';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+            heart.innerHTML = '💖';
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 5000);
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if(Math.random() < 0.4) createSparkle(e.clientX, e.clientY);
+        });
+
+        setInterval(createHearts, 300);
     </script>
 </body>
 </html>
