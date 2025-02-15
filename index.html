@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I LOVE ANNA MADLY! 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Pacifico&family=Bungee+Shade&family=Dancing+Script:wght@700&family=Rubik+Glitch+Pop&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
+            background-size: 400% 400%;
+            animation: gradient 10s ease infinite;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 2;
+        }
+
+        .love-text {
+            font-family: 'Rubik Glitch Pop', cursive;
+            font-size: 6em;
+            color: #ff0066;
+            text-shadow: 0 0 30px #ff69b4, 0 0 20px #ff1493, 0 0 10px white;
+            animation: heartbeat 0.8s infinite, rotate 4s linear infinite;
+            transform-origin: center;
+            margin: 20px;
+            filter: drop-shadow(0 0 10px #ff69b4);
+        }
+
+        .extra-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 4em;
+            color: #ffb6c1;
+            animation: float 2s ease-in-out infinite;
+            text-shadow: 2px 2px 4px #ff1493;
+            transform: rotate(-5deg);
+        }
+
+        .annimation-text {
+            font-family: 'Lobster', cursive;
+            font-size: 5em;
+            color: #ff69b4;
+            animation: colorCycle 1s infinite, glow 2s ease-in-out infinite;
+            text-shadow: 0 0 20px white;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1) rotate(-3deg); }
+            15% { transform: scale(1.4) rotate(3deg); }
+            30% { transform: scale(1) rotate(-3deg); }
+            45% { transform: scale(1.2) rotate(3deg); }
+            60% { transform: scale(1) rotate(-3deg); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(-5deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(-5deg); }
+        }
+
+        @keyframes colorCycle {
+            0% { color: #ff69b4; }
+            50% { color: #ff1493; }
+            100% { color: #ff69b4; }
+        }
+
+        @keyframes glow {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+            100% { filter: brightness(1); }
+        }
+
+        .sparkle {
+            position: absolute;
+            background: radial-gradient(circle, #ff69b4 20%, transparent 70%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            animation: sparkle 1s linear forwards;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(3) rotate(360deg); opacity: 0; }
+        }
+
+        .hearts {
+            position: absolute;
+            font-size: 24px;
+            animation: fall linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="love-text">I LOVE ANNA</h1>
+        <div class="annimation-text">SO INFINITELY MUCH! 💖</div>
+        <p class="extra-text">My Heart Sparkles for You! ✨</p>
+    </div>
+
+    <script>
+        // Enhanced sparkle effect
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.background = `radial-gradient(circle, 
+                ${Math.random() > 0.5 ? '#ff69b4' : 'white'} 20%, transparent 70%)`;
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+
+        // Create falling hearts
+        function createHearts() {
+            const heart = document.createElement('div');
+            heart.className = 'hearts';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+            heart.innerHTML = '💖';
+            document.body.appendChild(heart);
+            
+            setTimeout(() => heart.remove(), 5000);
+        }
+
+        // Event listeners
+        document.addEventListener('mousemove', (e) => {
+            if(Math.random() < 0.6) {
+                createSparkle(e.clientX, e.clientY);
+            }
+        });
+
+        // Generate hearts continuously
+        setInterval(createHearts, 300);
+
+        // Random initial rotation
+        document.querySelectorAll('.love-text, .extra-text').forEach(el => {
+            el.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+        });
+    </script>
+</body>
+</html>
